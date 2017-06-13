@@ -79,7 +79,19 @@ vector<pair<int, string>> getFiles(string cate_dir)
 		        continue;
 
         //sscanf(ptr->d_name, "%s-%s:%d:%d:%d:%d:%d:%d", &a1, &a2, &a3, &a4, &a5, &a6, &a7, &a8);
-        int gestureno = (char)ptr->d_name[6] - 48;
+        stringstream filename(ptr->d_name);
+        string segment;
+        vector<std::string> seglist;
+
+        while(std::getline(filename, segment, '_'))
+        {
+           seglist.push_back(segment);
+        }
+        if(seglist.empty()) continue;
+
+
+        int gestureno = char(seglist[1][0]) - 48;
+
         if(gestureno<=9 && gestureno>=0)
         {
             files.push_back(std::make_pair(gestureno, ptr->d_name));
@@ -95,15 +107,16 @@ vector<pair<int, string>> getFiles(string cate_dir)
 int main( int argc , char** argv )
 {
     std::ofstream outfile("Hand.data");
-    vector<pair<int, string>> filenames = getFiles("test");
+    string directory = argv[1];
+    vector<pair<int, string>> filenames = getFiles(directory);
 
     vector<pair<int, string>>::iterator it;
     for( it=filenames.begin(); it!=filenames.end(); it++)
     {
         Mat image;
-        cout<<"filename="<<"/test/"+((pair<int, string>)(*it)).second<<endl;
-        image=imread("test/"+((pair<int, string>)(*it)).second);
-        cout<<"size="<<image.size<<endl;
+        //cout<<"filename="<<directory+((pair<int, string>)(*it)).second<<endl;
+        image=imread(directory+((pair<int, string>)(*it)).second);
+        //cout<<"size="<<image.size<<endl;
         cvtColor ( image , image , CV_BGR2GRAY ) ;
         threshold ( image , image , 5 , 255 , CV_THRESH_BINARY ) ;
         //imshow("Binary image" , image) ;
