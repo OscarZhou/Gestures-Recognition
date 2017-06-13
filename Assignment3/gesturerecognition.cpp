@@ -45,10 +45,11 @@ const int upH=234;
 const int upS=225;
 const int upV=255;
 
-const int loH=46;
-const int loS=17;
+const int loH=26;
+const int loS=0;
 const int loV=26;
-#elif
+
+#else
 const int upH=180;
 const int upS=255;
 const int upV=255;
@@ -125,6 +126,7 @@ int main(int argc , char** argv)
 		namedWindow( "Contour" , CV_WINDOW_AUTOSIZE );
         while (1){
             system_clock::time_point start = system_clock::now();
+
             cap >> frame;
             if( frame.empty() )
                 break;
@@ -151,11 +153,12 @@ int main(int argc , char** argv)
 		    }
 			drawContours( drawing , contours , largestcontour , color , 1 , 8) ;
 			
-			vector<float> CE;
+			vector<float> CE;            
+            if(contours.empty()) continue;
 			EllipticFourierDescriptors ( contours [largestcontour] , CE) ;
 			sample = (Mat_<float>(1, CE.size()) << CE[0],CE[1],CE[2],CE[3],CE[4],CE[5],CE[6],CE[7],CE[8],CE[9],CE[10],
 				                                            CE[11],CE[12],CE[13],CE[14],CE[15],CE[16],CE[17],CE[18],CE[19]);
-
+            
 			r = model->predict( sample );
 			//cout << "Prediction: " << r << endl;
 			std::chrono::milliseconds timespan(100); // 
@@ -254,12 +257,8 @@ int main(int argc , char** argv)
 
 	}
 
-
-
     waitKey(0);
     return 0;
-
-
 }
 
 
@@ -267,7 +266,9 @@ int main(int argc , char** argv)
 Mat findMarkers(Mat& image, Mat& imageHSV){
 
     cvtColor(image,imageHSV,CV_RGB2HSV);
-    GaussianBlur(imageHSV, imageHSV, Size(3,3),5,5);
+    
+    //GaussianBlur(imageHSV, imageHSV, Size(3,3),7,7);
+    imshow("hsv", imageHSV);
 	Mat binaryImage;
 	binaryImage.create(image.rows, image.cols, CV_8UC1);
 	for (int x=0;x<imageHSV.cols;x++){
@@ -289,7 +290,7 @@ Mat findMarkers(Mat& image, Mat& imageHSV){
 
 
 void EllipticFourierDescriptors ( vector<Point>& contour , vector< float>& CE){
-
+   
     vector<float> ax, ay, bx, by;
     int m=contour.size() ;
     //int FEATURES=20;//number of CEs we are interested in computing
@@ -325,5 +326,6 @@ void EllipticFourierDescriptors ( vector<Point>& contour , vector< float>& CE){
     */
 
 }
+
 
 
