@@ -18,6 +18,9 @@ using namespace chrono;
 using namespace cv::ml;
 
 //Macros for color pixels
+
+#define Mpixel(image, x, y) ((uchar *)(((image).data)+(y)*((image).step)))[(x)]
+
 #define pixelB(image,x,y) ( (uchar *) ( ((image).data) + (y)*((image).step) ) ) [(x) * ((image).channels())]
 #define pixelG(image,x,y) ( (uchar *) ( ((image).data) + (y)*((image).step) ) ) [(x) * ((image).channels())+1]
 #define pixelR(image,x,y) ( (uchar *) ( ((image).data) + (y)*((image).step) ) ) [(x) * ((image).channels())+2]
@@ -37,7 +40,7 @@ using namespace cv::ml;
  * Note: the gesture.xml must be in the same directory with this file (gesturerecognition.cpp)
 *********************************************************************************************/
 
-
+#if 1
 const int upH=234;
 const int upS=225;
 const int upV=255;
@@ -45,7 +48,7 @@ const int upV=255;
 const int loH=46;
 const int loS=17;
 const int loV=26;
-/*
+#elif
 const int upH=180;
 const int upS=255;
 const int upV=255;
@@ -53,7 +56,8 @@ const int upV=255;
 const int loH=0;
 const int loS=90;
 const int loV=180;
-*/
+#endif
+
 int marker_upH=upH;
 int marker_loH=loH;
 int marker_upS=upS;
@@ -61,7 +65,7 @@ int marker_loS=loS;
 int marker_upV=upV;
 int marker_loV=loV;
 
-void findMarkers(Mat& image, Mat& imageHSV);
+Mat findMarkers(Mat& image, Mat& imageHSV);
 void EllipticFourierDescriptors ( vector<Point>& contour , vector< float>& CE);
 
 template<typename T>
@@ -113,7 +117,7 @@ int main(int argc , char** argv)
         int key=0;
         double fps=0.0;
 		float r = 0.0;
-        Mat imageHSV,imagemarkers;
+        Mat imageHSV,imagemarkers, binaryimage;
 		Ptr<ANN_MLP> model;
 		model = load_classifier<ANN_MLP>("gesture.xml");
 		Mat sample;
@@ -125,15 +129,15 @@ int main(int argc , char** argv)
             if( frame.empty() )
                 break;
 			imagemarkers = frame.clone();			
-            findMarkers(imagemarkers,imageHSV);
-        	cvtColor ( imagemarkers , imagemarkers , CV_BGR2GRAY ) ;
-        	threshold ( imagemarkers , imagemarkers , 5 , 255 , CV_THRESH_BINARY ) ;
-		    imshow("Binary image" , imagemarkers) ;
+            binaryimage = findMarkers(imagemarkers,imageHSV);
+        	//cvtColor ( imagemarkers , imagemarkers , CV_BGR2GRAY ) ;
+        	//threshold ( imagemarkers , imagemarkers , 5 , 255 , CV_THRESH_BINARY ) ;
+		    imshow("Binary image" , binaryimage) ;
 		    vector<vector<Point> > contours ;
-		    findContours ( imagemarkers , contours ,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE) ;
+		    findContours ( binaryimage , contours ,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE) ;
 
 		    //drawing the largest contour
-		    Mat drawing = Mat::zeros ( imagemarkers.size() , CV_8UC3 ) ;		    
+		    Mat drawing = Mat::zeros ( binaryimage.size() , CV_8UC3 ) ;		    
 		    Scalar color = CV_RGB( 0 , 255 ,0 ) ;
 		    int largestcontour =0;
 		    long int largestsize =0;
@@ -260,27 +264,25 @@ int main(int argc , char** argv)
 
 
 
-void findMarkers(Mat& image, Mat& imageHSV){
+Mat findMarkers(Mat& image, Mat& imageHSV){
 
     cvtColor(image,imageHSV,CV_RGB2HSV);
     GaussianBlur(imageHSV, imageHSV, Size(3,3),5,5);
-
+	Mat binaryImage;
+	binaryImage.create(image.rows, image.cols, CV_8UC1);
 	for (int x=0;x<imageHSV.cols;x++){
 		for (int y=0;y<imageHSV.rows;y++){
 			if( pixelR(imageHSV,x,y) < marker_loV || pixelR(imageHSV,x,y) > marker_upV ||
 			pixelG(imageHSV,x,y) < marker_loS || pixelG(imageHSV,x,y) > marker_upS ||
 			pixelB(imageHSV,x,y) < marker_loH || pixelB(imageHSV,x,y) > marker_upH   ){
-				pixelR(image,x,y)=0;
-				pixelG(image,x,y)=0;
-				pixelB(image,x,y)=0;
+				Mpixel(binaryImage, x, y) = 0;
 			}
 			else {
-				pixelR(image,x,y)=255;
-				pixelG(image,x,y)=255;
-				pixelB(image,x,y)=255;
+				Mpixel(binaryImage, x, y) = 255;
 			}
 		}
 	}
+	return binaryImage;
 }
 
 
