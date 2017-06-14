@@ -13,24 +13,38 @@
 #include "opencv2/ml/ml.hpp"
 
 
+
+#define Mpixel(image, x, y) ((uchar *)(((image).data)+(y)*((image).step)))[(x)]
+
 //Macros for color pixels
 #define pixelB(image,x,y) ( (uchar *) ( ((image).data) + (y)*((image).step) ) ) [(x) * ((image).channels())]
 #define pixelG(image,x,y) ( (uchar *) ( ((image).data) + (y)*((image).step) ) ) [(x) * ((image).channels())+1]
 #define pixelR(image,x,y) ( (uchar *) ( ((image).data) + (y)*((image).step) ) ) [(x) * ((image).channels())+2]
 
-#define FEATURES 20
+#define FEATURES 23
 using namespace std;
 using namespace cv;
 using namespace cv::ml;
 
+
+#if 1
 const int upH=180;
 const int upS=255;
 const int upV=255;
 
 const int loH=0;
-const int loS=90;
-const int loV=180;
+const int loS=100;
+const int loV=120;
 
+#else 
+const int upH=180;
+const int upS=255;
+const int upV=255;
+
+const int loH=0;
+const int loS=99;
+const int loV=121;
+#endif
 //
 int marker_upH=upH;
 int marker_loH=loH;
@@ -41,6 +55,8 @@ int marker_loV=loV;
 
 Mat src;
 
+Ptr<ANN_MLP> model;
+	
 
 
 void EllipticFourierDescriptors ( vector<Point>& contour , vector< float>& CE){
@@ -97,34 +113,38 @@ static Ptr<T> load_classifier(const string& filename_to_load)
 
 void findMarkers(int value, void * object){
 
-    Mat imageHSV1;
+    Mat imageHSV;
     Mat dstImage = src.clone();
+    //imshow("rgb", dstImage);
 
-    cvtColor(src,imageHSV1,CV_RGB2HSV);
-    GaussianBlur(imageHSV1, imageHSV1, Size(1,1),5,5);
+    cvtColor(dstImage,imageHSV,CV_BGR2HSV);
 
-	for (int x=0;x<imageHSV1.cols;x++){
-		for (int y=0;y<imageHSV1.rows;y++){
-			if( pixelR(imageHSV1,x,y) < marker_loV || pixelR(imageHSV1,x,y) > marker_upV ||
-			pixelG(imageHSV1,x,y) < marker_loS || pixelG(imageHSV1,x,y) > marker_upS ||
-			pixelB(imageHSV1,x,y) < marker_loH || pixelB(imageHSV1,x,y) > marker_upH   ){
-				pixelR(dstImage,x,y)=0;
-				pixelG(dstImage,x,y)=0;
-				pixelB(dstImage,x,y)=0;
+    //imshow("hsv", imageHSV);
+    cout<<"!!!!"<<endl;
+	medianBlur(imageHSV, imageHSV, 3);
+	GaussianBlur(imageHSV, imageHSV, Size(3,3),5,5);
+    
+    //imshow("hsv1", imageHSV);
+	Mat binaryImage;
+	binaryImage.create(dstImage.rows, dstImage.cols, CV_8UC1);
+	for (int x=0;x<imageHSV.cols;x++){
+		for (int y=0;y<imageHSV.rows;y++){
+			if( pixelR(imageHSV,x,y) < marker_loV || pixelR(imageHSV,x,y) > marker_upV ||
+			pixelG(imageHSV,x,y) < marker_loS || pixelG(imageHSV,x,y) > marker_upS ||
+			pixelB(imageHSV,x,y) < marker_loH || pixelB(imageHSV,x,y) > marker_upH   ){
+				Mpixel(binaryImage, x, y) = 0;
 			}
 			else {
-				pixelR(dstImage,x,y)=255;
-				pixelG(dstImage,x,y)=255;
-				pixelB(dstImage,x,y)=255;
+				Mpixel(binaryImage, x, y) = 255;
 			}
 		}
 	}
 
-	cvtColor ( dstImage , dstImage , CV_BGR2GRAY ) ;
-	threshold ( dstImage , dstImage , 5 , 255 , CV_THRESH_BINARY ) ;
-    //imshow("Binary image" , dstImage) ;
+	//cvtColor ( dstImage , dstImage , CV_BGR2GRAY ) ;
+	//threshold ( dstImage , dstImage , 5 , 255 , CV_THRESH_BINARY ) ;
+    imshow("Binary image" , binaryImage) ;
     vector<vector<Point> > contours ;
-    findContours ( dstImage , contours ,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE) ;
+    findContours ( binaryImage , contours ,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE) ;
 
     //drawing the largest contour
     Mat drawing = Mat::zeros ( dstImage.size() , CV_8UC3 ) ;		    
@@ -144,10 +164,8 @@ void findMarkers(int value, void * object){
 	vector<float> CE;
 	EllipticFourierDescriptors ( contours [largestcontour] , CE) ;
 
-	Ptr<ANN_MLP> model;
-	model = load_classifier<ANN_MLP>("Assignment3/gesture.xml");
 	Mat sample = (Mat_<float>(1, CE.size()) << CE[0],CE[1],CE[2],CE[3],CE[4],CE[5],CE[6],CE[7],CE[8],CE[9],CE[10],
-			                                    CE[11],CE[12],CE[13],CE[14],CE[15],CE[16],CE[17],CE[18],CE[19]);
+			                                    CE[11],CE[12],CE[13],CE[14],CE[15],CE[16],CE[17],CE[18],CE[19],CE[20],CE[21],CE[22]);
 
 	float r = model->predict( sample );
 
@@ -169,7 +187,8 @@ int main(int argc, char** argv)
 
     //namedWindow( "captured image", 0 );
     namedWindow( "result", 1 );
-
+    //namedWindow( "hsv", 1 );
+	model = load_classifier<ANN_MLP>("Assignment3/gesture.xml");
 
     createTrackbar("upH", "result", &marker_upH, 255, findMarkers);
     setTrackbarPos("upH","result",upH);
@@ -187,7 +206,7 @@ int main(int argc, char** argv)
     createTrackbar("loV", "result", &marker_loV, 255,findMarkers);
     setTrackbarPos("loV","result",loV);
 
-    //Find_markers(imageHSV,src);
+    findMarkers(255,&src);
 
     waitKey(0);
     return 0;
