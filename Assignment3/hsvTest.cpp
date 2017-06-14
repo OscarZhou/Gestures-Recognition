@@ -33,8 +33,8 @@ const int upS=255;
 const int upV=255;
 
 const int loH=0;
-const int loS=100;
-const int loV=120;
+const int loS=96;
+const int loV=122;
 
 #else 
 const int upH=180;
@@ -117,12 +117,12 @@ void findMarkers(int value, void * object){
     Mat dstImage = src.clone();
     //imshow("rgb", dstImage);
 
-    cvtColor(dstImage,imageHSV,CV_BGR2HSV);
+    cvtColor(dstImage,imageHSV,CV_RGB2HSV);
 
-    //imshow("hsv", imageHSV);
-    cout<<"!!!!"<<endl;
-	medianBlur(imageHSV, imageHSV, 3);
-	GaussianBlur(imageHSV, imageHSV, Size(3,3),5,5);
+
+
+	//medianBlur(imageHSV, imageHSV, 3);
+	//GaussianBlur(imageHSV, imageHSV, Size(3,3),5,5);
     
     //imshow("hsv1", imageHSV);
 	Mat binaryImage;
@@ -140,15 +140,18 @@ void findMarkers(int value, void * object){
 		}
 	}
 
+
+	//Canny( binaryImage, binaryImage, 50, 200, 3 );
 	//cvtColor ( dstImage , dstImage , CV_BGR2GRAY ) ;
 	//threshold ( dstImage , dstImage , 5 , 255 , CV_THRESH_BINARY ) ;
     imshow("Binary image" , binaryImage) ;
     vector<vector<Point> > contours ;
-    findContours ( binaryImage , contours ,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE) ;
+    findContours ( binaryImage , contours ,CV_RETR_LIST, CV_CHAIN_APPROX_NONE) ;
 
     //drawing the largest contour
     Mat drawing = Mat::zeros ( dstImage.size() , CV_8UC3 ) ;		    
     Scalar color = CV_RGB( 0 , 255 ,0 ) ;
+    Scalar color1 = CV_RGB( 255 , 0 ,0 ) ;
     int largestcontour =0;
     long int largestsize =0;
     for ( int i = 0; i< contours.size() ; i++ )
@@ -157,8 +160,15 @@ void findMarkers(int value, void * object){
 	{
 	    largestsize=contours [i].size() ;
 	    largestcontour=i ;
+
 	}
     }
+
+	for ( int i = 0; i< contours.size() ; i++ )
+    {
+				drawContours( drawing , contours , i , color1 , 1 , 8) ;	
+    }
+
 	drawContours( drawing , contours , largestcontour , color , 1 , 8) ;
 
 	vector<float> CE;

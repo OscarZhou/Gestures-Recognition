@@ -26,7 +26,7 @@ using namespace cv::ml;
 #define pixelR(image,x,y) ( (uchar *) ( ((image).data) + (y)*((image).step) ) ) [(x) * ((image).channels())+2]
 
 
-#define FEATURES 20
+#define FEATURES 23
 
 // written by Hongyu ZHOU(Oscar) , 16242950
 
@@ -41,15 +41,15 @@ using namespace cv::ml;
 *********************************************************************************************/
 
 #if 1
-const int upH=234;
-const int upS=225;
+const int upH=180;
+const int upS=255;
 const int upV=255;
 
-const int loH=26;
-const int loS=0;
-const int loV=26;
+const int loH=0;
+const int loS=96;
+const int loV=122;
 
-#else
+#else 
 const int upH=180;
 const int upS=255;
 const int upV=255;
@@ -157,7 +157,7 @@ int main(int argc , char** argv)
             if(contours.empty()) continue;
 			EllipticFourierDescriptors ( contours [largestcontour] , CE) ;
 			sample = (Mat_<float>(1, CE.size()) << CE[0],CE[1],CE[2],CE[3],CE[4],CE[5],CE[6],CE[7],CE[8],CE[9],CE[10],
-				                                            CE[11],CE[12],CE[13],CE[14],CE[15],CE[16],CE[17],CE[18],CE[19]);
+				                                            CE[11],CE[12],CE[13],CE[14],CE[15],CE[16],CE[17],CE[18],CE[19],CE[20],CE[21],CE[22]);
             
 			r = model->predict( sample );
 			//cout << "Prediction: " << r << endl;
@@ -195,21 +195,6 @@ int main(int argc , char** argv)
         }
 
         Mat imageHSV,imagemarkers;
-
-   		namedWindow( "result", 1 );
-		createTrackbar("upH", "result", &marker_upH, 255, NULL);
-		setTrackbarPos("upH","result",upH);
-		createTrackbar("loH", "result", &marker_loH, 255,NULL);
-		setTrackbarPos("loH","result",loH);
-		createTrackbar("upS", "result", &marker_upS, 255,NULL);
-		setTrackbarPos("upS","result",upS);
-		createTrackbar("loS", "result", &marker_loS, 255,NULL);
-		setTrackbarPos("loS","result",loS);
-		createTrackbar("upV", "result", &marker_upV, 255,NULL);
-		setTrackbarPos("upV","result",upV);
-		createTrackbar("loV", "result", &marker_loV, 255,NULL);
-		setTrackbarPos("loV","result",loV);
-
 		
 		namedWindow( "Contour" , CV_WINDOW_AUTOSIZE );
 
@@ -217,12 +202,12 @@ int main(int argc , char** argv)
 		model = load_classifier<ANN_MLP>("gesture.xml");
 
 		imagemarkers = image.clone();			
-        findMarkers(imagemarkers,imageHSV);
-    	cvtColor ( imagemarkers , imagemarkers , CV_BGR2GRAY ) ;
-    	threshold ( imagemarkers , imagemarkers , 5 , 255 , CV_THRESH_BINARY ) ;
-	    imshow("Binary image" , imagemarkers) ;
+        Mat binaryImage = findMarkers(imagemarkers,imageHSV);
+    	//cvtColor ( imagemarkers , imagemarkers , CV_BGR2GRAY ) ;
+    	//threshold ( imagemarkers , imagemarkers , 5 , 255 , CV_THRESH_BINARY ) ;
+	    imshow("Binary image" , binaryImage) ;
 	    vector<vector<Point> > contours ;
-	    findContours ( imagemarkers , contours ,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE) ;
+	    findContours ( binaryImage , contours ,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE) ;
 
 	    //drawing the largest contour
 	    Mat drawing = Mat::zeros ( imagemarkers.size() , CV_8UC3 ) ;		    
@@ -268,7 +253,7 @@ Mat findMarkers(Mat& image, Mat& imageHSV){
     cvtColor(image,imageHSV,CV_RGB2HSV);
     
     //GaussianBlur(imageHSV, imageHSV, Size(3,3),7,7);
-    imshow("hsv", imageHSV);
+    //imshow("hsv", imageHSV);
 	Mat binaryImage;
 	binaryImage.create(image.rows, image.cols, CV_8UC1);
 	for (int x=0;x<imageHSV.cols;x++){
@@ -326,6 +311,7 @@ void EllipticFourierDescriptors ( vector<Point>& contour , vector< float>& CE){
     */
 
 }
+
 
 
 
