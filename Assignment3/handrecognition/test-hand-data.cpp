@@ -30,8 +30,8 @@ const int upH=180;
 const int upS=255;
 const int upV=255;
 
-const int loH=50;
-const int loS=94;
+const int loH=96;
+const int loS=82;
 const int loV=100;
 
 #else 
@@ -151,7 +151,7 @@ void findMarkers(int value, void * object){
     cvtColor(src,imageHSV,CV_RGB2HSV);
 
 	medianBlur(imageHSV, imageHSV, 3);
-	GaussianBlur(imageHSV, imageHSV, Size(3,3),5,5);
+	GaussianBlur(imageHSV, imageHSV, Size(3,3),3,3);
 	Mat binaryImage;
 	binaryImage.create(dstImage.rows, dstImage.cols, CV_8UC1);
 	for (int x=0;x<imageHSV.cols;x++){
