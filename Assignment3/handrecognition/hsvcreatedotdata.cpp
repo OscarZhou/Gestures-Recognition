@@ -21,13 +21,13 @@ using namespace cv;
 
 #define FEATURES 23
 
-const int upH=251;
-const int upS=204;
+const int upH=180;
+const int upS=255;
 const int upV=255;
 
-const int loH=49;
-const int loS=20;
-const int loV=76;
+const int loH=91;
+const int loS=0;
+const int loV=58;
 
 int marker_upH=upH;
 int marker_loH=loH;

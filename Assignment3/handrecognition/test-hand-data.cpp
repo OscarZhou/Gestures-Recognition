@@ -16,9 +16,6 @@ using namespace cv::ml;
 
 #define Mpixel(image, x, y) ((uchar *)(((image).data)+(y)*((image).step)))[(x)]
 
-#define MpixelB(image, x, y) ((uchar *)(((image).data)+(y)*((image).step)))[(x)*((image).channels())]
-#define MpixelG(image, x, y) ((uchar *)(((image).data)+(y)*((image).step)))[(x)*((image).channels())+1]
-#define MpixelR(image, x, y) ((uchar *)(((image).data)+(y)*((image).step)))[(x)*((image).channels())+2]
 
 
 #define pixelB(image,x,y) ( (uchar *) ( ((image).data) + (y)*((image).step) ) ) [(x) * ((image).channels())]
@@ -27,24 +24,28 @@ using namespace cv::ml;
 
 #define FEATURES 23
 
-
-#if 1
+#define TESTDATA 1
+#if TESTDATA
 const int upH=180;
 const int upS=255;
 const int upV=255;
 
-const int loH=0;
-const int loS=100;
-const int loV=120;
+const int loH=50;
+const int loS=94;
+const int loV=100;
 
 #else 
+
+
+//trainning parameters
+
 const int upH=180;
 const int upS=255;
 const int upV=255;
 
-const int loH=0;
-const int loS=99;
-const int loV=121;
+const int loH=91;
+const int loS=0;
+const int loV=58;
 #endif
 //
 int marker_upH=upH;
@@ -149,36 +150,29 @@ void findMarkers(int value, void * object){
 
     cvtColor(src,imageHSV,CV_RGB2HSV);
 
-    //imshow("hsv", imageHSV);
-
-	//medianBlur(imageHSV, imageHSV, 3);
-	//GaussianBlur(imageHSV, imageHSV, Size(3,3),5,5);
-    
-    //imshow("hsv1", imageHSV);
-	//Mat binaryImage;
-	//binaryImage.create(dstImage.rows, dstImage.cols, CV_8UC1);
+	medianBlur(imageHSV, imageHSV, 3);
+	GaussianBlur(imageHSV, imageHSV, Size(3,3),5,5);
+	Mat binaryImage;
+	binaryImage.create(dstImage.rows, dstImage.cols, CV_8UC1);
 	for (int x=0;x<imageHSV.cols;x++){
 		for (int y=0;y<imageHSV.rows;y++){
 			if( pixelR(imageHSV,x,y) < marker_loV || pixelR(imageHSV,x,y) > marker_upV ||
 			pixelG(imageHSV,x,y) < marker_loS || pixelG(imageHSV,x,y) > marker_upS ||
 			pixelB(imageHSV,x,y) < marker_loH || pixelB(imageHSV,x,y) > marker_upH   ){
-				pixelR(dstImage,x,y)=0;
-				pixelG(dstImage,x,y)=0;
-				pixelB(dstImage,x,y)=0;
+				Mpixel(binaryImage,x,y)=0;
 			}
 			else {
-				pixelR(dstImage,x,y)=255;
-				pixelG(dstImage,x,y)=255;
-				pixelB(dstImage,x,y)=255;
+				Mpixel(binaryImage,x,y)=255;
 			}
 		}
 	}
 
+//	Canny( binaryImage, binaryImage, 50, 200, 3 );
 	//cvtColor ( dstImage , dstImage , CV_BGR2GRAY ) ;
 	//threshold ( dstImage , dstImage , 5 , 255 , CV_THRESH_BINARY ) ;
     //imshow("Binary image" , binaryImage) ;
     vector<vector<Point> > contours ;
-    findContours ( dstImage , contours ,CV_RETR_LIST, CV_CHAIN_APPROX_NONE) ;
+    findContours ( binaryImage , contours ,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE) ;
 
     //drawing the largest contour
     Mat drawing = Mat::zeros ( dstImage.size() , CV_8UC3 ) ;		    
@@ -202,7 +196,7 @@ void findMarkers(int value, void * object){
 			                                    CE[11],CE[12],CE[13],CE[14],CE[15],CE[16],CE[17],CE[18],CE[19],CE[20],CE[21],CE[22]);
 
 	r = model->predict( sample );
-	cout<<", r="<<r<<endl;
+
 	
 }
 
@@ -217,9 +211,19 @@ int main( int argc , char** argv )
 	model = load_classifier<ANN_MLP>("../gesture.xml");
     for( it=filenames.begin(); it!=filenames.end(); it++)
     {
+#if TESTDATA
+		float classno= (float)(*it)[0]-48.0;  //for test image
+		
+	#else	
+        
+        float classno = (float)(*it)[6] - 48.0;
 
-		float classno= (float)(*it)[0]-48.0;
-		cout<<"gesture no="<<classno;
+        if(!(classno<=9 && classno>=0))
+        {
+            continue;
+        } //for trainning image
+
+#endif
         //cout<<"filename="<<directory+((pair<int, string>)(*it)).second<<endl;
         src=imread(directory+ *it);
 		
@@ -232,7 +236,15 @@ int main( int argc , char** argv )
 
 	    findMarkers(255, &src);
 
-		if(classno == r) counter1++; 
+		if(classno == r)
+		{
+			 counter1++;
+		}
+		else
+		{
+			//cout<<"gesture no="<<classno<<", r="<<r<<endl;
+			cout<<*it<<"------"<<classno<<endl;
+		} 
 		counter++;
     }
 
