@@ -28,8 +28,6 @@ using namespace cv::ml;
 
 #define FEATURES 23
 
-#define CAMERA 	1
-#define IMAGE	2
 
 // written by Hongyu ZHOU(Oscar) , 16242950
 
@@ -42,6 +40,7 @@ using namespace cv::ml;
  * ./gesturerecognition ~/Downloads/4_A.jpg
  * Note: the gesture.xml must be in the same directory with this file (gesturerecognition.cpp)
 *********************************************************************************************/
+
 
 int upH=180;
 int upS=255;
@@ -87,7 +86,8 @@ void gestureRecognitionWithCamera()
         exit(0);
     }
     cout << "Opened camera" << endl;        
-	namedWindow( "result", 1 );
+    namedWindow( "result", 1 );
+    namedWindow( "Binary image", 1 );
 	//set trackbar
 	createTrackbar("upH", "result", &marker_upH, 255, NULL);
 	setTrackbarPos("upH","result",upH);
@@ -123,9 +123,8 @@ void gestureRecognitionWithCamera()
             break;
 		imagemarkers = frame.clone();			
         binaryimage = findMarkers(imagemarkers,imageHSV);
-    	//cvtColor ( imagemarkers , imagemarkers , CV_BGR2GRAY ) ;
-    	//threshold ( imagemarkers , imagemarkers , 5 , 255 , CV_THRESH_BINARY ) ;
-	    imshow("Binary image" , binaryimage) ;
+
+        imshow("Binary image" , binaryimage) ;
 	    vector<vector<Point> > contours ;
 	    findContours ( binaryimage , contours ,CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE) ;
 
@@ -160,7 +159,6 @@ void gestureRecognitionWithCamera()
         sprintf(printit2,"prediction: %f", r);
         putText(drawing, printit1, cvPoint(10,30), FONT_HERSHEY_PLAIN, 2, cvScalar(255,255,255), 2, 8);
         putText(drawing, printit2, cvPoint(10,55), FONT_HERSHEY_PLAIN, 2, cvScalar(255,255,255), 2, 8);
-
 
 		imshow( "Contour" , drawing ) ;
 		imshow( "result", frame );
@@ -237,12 +235,12 @@ int main(int argc , char** argv)
 {
 	if(argc != 2) {
 
-		int upH=180;
-		int upS=255;
-		int upV=255;
-		int loH=96;
-		int loS=82;
-		int loV=100;
+		upH=180;
+		upS=255;
+		upV=255;
+        loH=53;
+        loS=4;
+        loV=40;
 
 		marker_upH=upH;
 		marker_loH=loH;
@@ -255,12 +253,12 @@ int main(int argc , char** argv)
 	}
 	else
 	{
-        int upH=180;
-		int upS=255;
-		int upV=255;
-		int loH=96;
-		int loS=82;
-		int loV=100;
+        upH=180;
+		upS=255;
+		upV=255;
+		loH=96;
+		loS=82;
+		loV=100;
 
 		marker_upH=upH;
 		marker_loH=loH;
